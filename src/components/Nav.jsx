@@ -25,7 +25,7 @@ export default function Nav({ menuOpen, onToggleMenu }) {
     <header className={"nav" + (scrolled ? " scrolled" : "")} role="banner">
       <nav className="nav-inner" aria-label="Primary">
         <a className="brand" href="#top" aria-label="Spurly home">
-          <img src="/assets/spurly-icon.png" alt="" />
+          <img src="/Spurly icon copy.png" alt="" />
           <span>Spurly</span>
         </a>
         <div className="nav-links">
