@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="wrap">
         <div className="foot-grid">
           <div className="foot-brand">
-            <a className="brand" href="#top" aria-label="Spurly home"><img src="/assets/spurly-icon.png" alt="" /><span>Spurly</span></a>
+            <a className="brand" href="#top" aria-label="Spurly home"><img src="/assets/spurly-icon.png" alt="Spurly" /><span>Spurly</span></a>
             <p>The LinkedIn prospecting &amp; outreach tool that lives in your browser. Capture, connect, reach out — at scale.</p>
           </div>
           <div className="foot-cols">
