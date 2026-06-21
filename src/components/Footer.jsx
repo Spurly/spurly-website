@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CHROME_URL } from "./Button.jsx";
 import { ShieldIcon } from "../icons.jsx";
 
@@ -7,16 +8,17 @@ export default function Footer() {
       <div className="wrap">
         <div className="foot-grid">
           <div className="foot-brand">
-            <a className="brand" href="#top" aria-label="Spurly home"><img src="/assets/spurly-icon.png" alt="Spurly" /><span>Spurly</span></a>
+            <Link className="brand" href="/" aria-label="Spurly home"><img src="/assets/spurly-icon.png" alt="Spurly" width="56" height="56" /><span>Spurly</span></Link>
             <p>The LinkedIn prospecting &amp; outreach tool that lives in your browser. Capture, connect, reach out — at scale.</p>
           </div>
           <div className="foot-cols">
             <div className="foot-col">
               <h4>Product</h4>
-              <a href="#how">How it works</a>
-              <a href="#who">Who it's for</a>
-              <a href="#product">Product</a>
-              <a href="#pricing">Pricing</a>
+              <a href="/#how">How it works</a>
+              <a href="/#who">Who it's for</a>
+              <a href="/#product">Product</a>
+              <a href="/#pricing">Pricing</a>
+              <Link href="/blog">Blog</Link>
             </div>
             <div className="foot-col">
               <h4>Get Spurly</h4>
@@ -26,9 +28,9 @@ export default function Footer() {
             </div>
             <div className="foot-col">
               <h4>Company</h4>
-              <a href="#">Privacy</a>
-              <a href="#">Terms</a>
-              <a href="#">Support</a>
+              <Link href="/privacy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
+              <Link href="/support">Support</Link>
             </div>
           </div>
         </div>

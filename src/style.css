@@ -629,6 +629,42 @@ body[data-frost="solid"]{
   .flap-cell .ch{font-size:clamp(18px,7vw,30px)}
 }
 
+/* ---------- Content pages (legal, support, blog) ---------- */
+.content-page{padding-top:clamp(110px,14vw,150px);padding-bottom:clamp(60px,9vw,110px);min-height:60vh}
+.prose{max-width:760px}
+.prose .h1{font-size:clamp(30px,4.4vw,46px);line-height:1.08;letter-spacing:-.02em;margin:6px 0 10px}
+.prose-meta{color:var(--text-3);font-size:14px;margin:0 0 28px}
+.prose-meta a{color:var(--accent);font-weight:600}
+.prose p{color:var(--text-2);font-size:16.5px;line-height:1.7;margin:0 0 18px}
+.prose h2{font-size:clamp(21px,2.6vw,27px);letter-spacing:-.01em;color:var(--text-1);margin:38px 0 12px}
+.prose h3{font-size:18px;color:var(--text-1);margin:26px 0 8px}
+.prose ul{margin:0 0 18px;padding-left:22px}
+.prose li{color:var(--text-2);font-size:16.5px;line-height:1.7;margin:0 0 8px}
+.prose a{color:var(--accent);font-weight:600;text-decoration:none}
+.prose a:hover{text-decoration:underline}
+.prose code{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:.88em;background:var(--grad-soft);padding:2px 7px;border-radius:6px;color:var(--purple-700)}
+.prose .eyebrow{margin-bottom:6px}
+.faq-item{margin:0 0 22px}
+.faq-item h3{margin-bottom:6px}
+
+/* blog index */
+.blog-list{margin-top:34px;display:grid;gap:8px}
+.blog-card{padding:24px 0;border-top:1px solid var(--hairline)}
+.blog-card h2{margin:6px 0 10px;font-size:clamp(20px,2.4vw,25px)}
+.blog-card h2 a{color:var(--text-1);font-weight:700}
+.blog-card h2 a:hover{color:var(--accent);text-decoration:none}
+.blog-readmore{display:inline-block;margin-top:4px;font-size:14.5px}
+
+/* blog post extras */
+.blog-cta{margin:44px 0 12px;padding:28px;border-radius:18px;background:var(--grad-soft);border:1px solid var(--edge-light)}
+.blog-cta h2{margin:0 0 10px}
+.blog-cta p{margin-bottom:18px}
+.blog-related{margin-top:36px;padding-top:24px;border-top:1px solid var(--hairline)}
+.blog-related ul{list-style:none;padding:0}
+.blog-related li{margin:0 0 10px}
+.blog-related a{font-size:16px}
+@media (max-width:640px){.content-nav .nav-links{display:none}}
+
 /* ---------- Sound toggle (speaker) ---------- */
 .sound-toggle{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;
   background:var(--glass);border:1px solid var(--border);color:var(--text-2);position:relative;
