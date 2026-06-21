@@ -18,7 +18,7 @@ export default function Hero() {
           <p className="lead">Spurly turns LinkedIn &amp; Sales Navigator into your pipeline — capture leads, enrich every profile, and send outreach that sounds like you, to the right people in any timezone. One click, right inside your browser.</p>
           <div className="hero-actions">
             <ChromeLink variant="primary" size="lg" magnetic>
-              <TargetIcon />
+              <TargetIcon className="cta-wobble" />
               Add to Chrome — Start free
             </ChromeLink>
             <Button variant="ghost" size="lg" href="#product">See it in action</Button>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Spurly — Flap Sound Lab</title>
+<style>
+  :root { --bg:#0f1117; --card:#1a1d27; --ink:#e9ecf4; --mut:#9aa0b0; --accent:#7c3aed; --accent2:#38bdf8; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    padding:40px 20px; }
+  .wrap { max-width:760px; margin:0 auto; }
+  h1 { font-size:26px; margin:0 0 6px; }
+  .sub { color:var(--mut); margin:0 0 26px; font-size:14.5px; line-height:1.5; }
+  .bar { display:flex; align-items:center; gap:14px; background:var(--card);
+    padding:14px 18px; border-radius:14px; margin-bottom:24px; position:sticky; top:14px; }
+  .bar label { font-size:13px; color:var(--mut); white-space:nowrap; }
+  .bar input[type=range] { flex:1; accent-color:var(--accent); }
+  .vol { font-variant-numeric:tabular-nums; width:42px; text-align:right; font-size:13px; }
+  .card { background:var(--card); border-radius:16px; padding:18px 20px; margin-bottom:14px;
+    border:1px solid rgba(255,255,255,.05); }
+  .card h2 { margin:0 0 4px; font-size:17px; display:flex; align-items:center; gap:10px; }
+  .tag { font-size:11px; font-weight:700; letter-spacing:.5px; color:#fff;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); padding:3px 9px; border-radius:999px; }
+  .card p { margin:0 0 14px; color:var(--mut); font-size:13.5px; line-height:1.45; }
+  .btns { display:flex; gap:10px; flex-wrap:wrap; }
+  button { font:inherit; cursor:pointer; border:none; border-radius:10px; padding:10px 16px;
+    font-size:13.5px; font-weight:600; transition:transform .08s ease, filter .15s ease; }
+  button:active { transform:translateY(1px); }
+  .play { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
+  .play:hover { filter:brightness(1.08); }
+  .tick { background:#2a2e3b; color:var(--ink); }
+  .tick:hover { background:#333848; }
+  .hint { margin-top:30px; padding:16px 18px; background:rgba(124,58,237,.10);
+    border:1px solid rgba(124,58,237,.3); border-radius:12px; font-size:13.5px; color:#cdd2e0; line-height:1.55; }
+  code { background:rgba(255,255,255,.08); padding:2px 6px; border-radius:5px; font-size:12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔊 Flap Sound Lab</h1>
+  <p class="sub">Click anywhere once to enable audio, then audition each option.
+    <b>Play word change</b> simulates the real 8-column flap stagger (what you'd actually hear);
+    <b>single tick</b> plays one flip. Tell me the letter you like — I'll wire it into the site.</p>
+
+  <div class="bar">
+    <label>Volume</label>
+    <input id="vol" type="range" min="0" max="100" value="60" />
+    <span class="vol" id="volval">60%</span>
+  </div>
+
+  <div id="cards"></div>
+
+  <div class="hint">
+    <b>Want real recorded samples instead of synthesized?</b> Good free sources:
+    <code>freesound.org</code> (search "split flap", "solari", "rolodex", "tick"),
+    <code>pixabay.com/sound-effects</code>, or <code>zapsplat.com</code>.
+    Download a short <code>.mp3/.wav</code>, drop it in <code>public/assets/</code>, and I'll play it on each flip instead.
+    Synthesized (these options) = zero download weight; a sample = more "real" but adds a file.
+  </div>
+</div>
+
+<script>
+let ctx = null;
+const master = { gain: 0.6 };
+function getCtx() {
+  if (ctx) return ctx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  ctx = new AC();
+  return ctx;
+}
+window.addEventListener("pointerdown", () => { const c = getCtx(); if (c.state === "suspended") c.resume(); }, { passive:true });
+
+const vol = document.getElementById("vol");
+const volval = document.getElementById("volval");
+vol.addEventListener("input", () => { master.gain = vol.value/100; volval.textContent = vol.value + "%"; });
+
+// Reusable noise buffer
+let nb = null;
+function noiseBuf() {
+  const c = getCtx();
+  if (nb) return nb;
+  const dur = 0.06;
+  nb = c.createBuffer(1, Math.floor(c.sampleRate*dur), c.sampleRate);
+  const d = nb.getChannelData(0);
+  for (let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+  return nb;
+}
+// Longer noise buffer for swoosh-type sounds
+let lnb = null;
+function longNoiseBuf() {
+  const c = getCtx();
+  if (lnb) return lnb;
+  const dur = 0.7;
+  lnb = c.createBuffer(1, Math.floor(c.sampleRate*dur), c.sampleRate);
+  const d = lnb.getChannelData(0);
+  for (let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+  return lnb;
+}
+// One metallic "ching" (inharmonic partials) — a single coin
+function coinChing(c, now, baseFreq, vol) {
+  const partials = [1, 1.34, 1.78, 2.21, 2.83];
+  partials.forEach((m,i)=>{
+    const o=c.createOscillator(); o.type="square"; o.frequency.value=baseFreq*m;
+    const g=c.createGain(); const peak=vol*master.gain*(i===0?0.45:0.16);
+    g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(peak,now+0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, now+0.16+Math.random()*0.12);
+    o.connect(g); g.connect(c.destination); o.start(now); o.stop(now+0.35);
+  });
+}
+function env(g, now, peak, attack, decay) {
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.linearRampToValueAtTime(peak*master.gain, now+attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, now+decay);
+}
+
+// ---- Sound designs. Each takes (col, totalCols) for optional per-column variation ----
+const OPTIONS = [
+  {
+    key:"A", name:"Soft tick (current)", tag:"noise",
+    desc:"Band-passed noise burst ~1.7–2.4kHz. Gentle, papery. This is what's on the site now.",
+    play(col){ const c=getCtx(),now=c.currentTime; const s=c.createBufferSource(); s.buffer=noiseBuf();
+      const f=c.createBiquadFilter(); f.type="bandpass"; f.frequency.value=1700+Math.random()*700; f.Q.value=0.9;
+      const g=c.createGain(); env(g,now,0.05,0.002,0.035); s.connect(f); f.connect(g); g.connect(c.destination); s.start(now); s.stop(now+0.06); }
+  },
+  {
+    key:"B", name:"Woody thock", tag:"mechanical",
+    desc:"A muffled low knock — a click layered over a short 180Hz thump. Warmer, keyboard-ish.",
+    play(col){ const c=getCtx(),now=c.currentTime;
+      const s=c.createBufferSource(); s.buffer=noiseBuf(); const f=c.createBiquadFilter(); f.type="lowpass"; f.frequency.value=1200; const g=c.createGain(); env(g,now,0.06,0.001,0.04); s.connect(f);f.connect(g);g.connect(c.destination); s.start(now); s.stop(now+0.06);
+      const o=c.createOscillator(); o.type="sine"; o.frequency.setValueAtTime(190,now); o.frequency.exponentialRampToValueAtTime(90,now+0.05); const og=c.createGain(); env(og,now,0.10,0.001,0.06); o.connect(og); og.connect(c.destination); o.start(now); o.stop(now+0.07); }
+  },
+  {
+    key:"C", name:"Crisp click", tag:"snappy",
+    desc:"Very short high-passed burst ~3–5kHz, 12ms. Tight and clicky, like a camera shutter step.",
+    play(col){ const c=getCtx(),now=c.currentTime; const s=c.createBufferSource(); s.buffer=noiseBuf();
+      const f=c.createBiquadFilter(); f.type="highpass"; f.frequency.value=3000+Math.random()*1500;
+      const g=c.createGain(); env(g,now,0.045,0.0008,0.014); s.connect(f);f.connect(g);g.connect(c.destination); s.start(now); s.stop(now+0.03); }
+  },
+  {
+    key:"D", name:"Typewriter clack", tag:"vintage",
+    desc:"A click plus a faint metallic ring (~2.6kHz) that decays fast. Old-school flap board.",
+    play(col){ const c=getCtx(),now=c.currentTime;
+      const s=c.createBufferSource(); s.buffer=noiseBuf(); const f=c.createBiquadFilter(); f.type="bandpass"; f.frequency.value=2200; f.Q.value=1.2; const g=c.createGain(); env(g,now,0.05,0.001,0.02); s.connect(f);f.connect(g);g.connect(c.destination); s.start(now); s.stop(now+0.04);
+      const o=c.createOscillator(); o.type="triangle"; o.frequency.value=2600+Math.random()*200; const og=c.createGain(); env(og,now,0.03,0.001,0.05); o.connect(og); og.connect(c.destination); o.start(now); o.stop(now+0.06); }
+  },
+  {
+    key:"E", name:"Melodic pluck", tag:"musical",
+    desc:"Each column plays a soft note rising across the word — a tiny melody as it settles. Playful.",
+    play(col,total){ const c=getCtx(),now=c.currentTime; const scale=[0,2,4,7,9,12,14,16];
+      const semi=scale[col%scale.length]; const freq=330*Math.pow(2,semi/12);
+      const o=c.createOscillator(); o.type="triangle"; o.frequency.value=freq; const g=c.createGain(); env(g,now,0.05,0.003,0.18); o.connect(g); g.connect(c.destination); o.start(now); o.stop(now+0.2); }
+  },
+  {
+    key:"F", name:"Rolodex sweep", tag:"swish",
+    desc:"Noise with a downward pitch sweep on each flip — a soft 'fwip'. Suggests motion/rotation.",
+    play(col){ const c=getCtx(),now=c.currentTime; const s=c.createBufferSource(); s.buffer=noiseBuf();
+      const f=c.createBiquadFilter(); f.type="bandpass"; f.Q.value=2.5; f.frequency.setValueAtTime(3200,now); f.frequency.exponentialRampToValueAtTime(900,now+0.05);
+      const g=c.createGain(); env(g,now,0.06,0.002,0.05); s.connect(f);f.connect(g);g.connect(c.destination); s.start(now); s.stop(now+0.06); }
+  },
+  {
+    key:"G", name:"Muted felt", tag:"minimal",
+    desc:"Low-passed ~800Hz, very soft, 25ms. The quietest, most understated option. Barely-there.",
+    play(col){ const c=getCtx(),now=c.currentTime; const s=c.createBufferSource(); s.buffer=noiseBuf();
+      const f=c.createBiquadFilter(); f.type="lowpass"; f.frequency.value=800;
+      const g=c.createGain(); env(g,now,0.04,0.003,0.025); s.connect(f);f.connect(g);g.connect(c.destination); s.start(now); s.stop(now+0.05); }
+  },
+  {
+    key:"H", name:"Swoosh", tag:"one-shot · swish",
+    desc:"A single soft whoosh per word change — band-passed noise sweeping up then down over ~0.45s. Plays once, not per letter.",
+    oneShot:true,
+    play(){ const c=getCtx(),now=c.currentTime,dur=0.45; const s=c.createBufferSource(); s.buffer=longNoiseBuf();
+      const f=c.createBiquadFilter(); f.type="bandpass"; f.Q.value=1.2;
+      f.frequency.setValueAtTime(500,now); f.frequency.exponentialRampToValueAtTime(4000,now+dur*0.5); f.frequency.exponentialRampToValueAtTime(700,now+dur);
+      const g=c.createGain(); g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(0.12*master.gain,now+dur*0.35); g.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start(now); s.stop(now+dur); }
+  },
+  {
+    key:"I", name:"Coins dropping", tag:"one-shot · cha-ching",
+    desc:"A little scatter of metallic coin chings (5–7) over ~0.5s per word change. Rewarding, game-like. Plays once, not per letter.",
+    oneShot:true,
+    play(){ const c=getCtx(),now=c.currentTime; const n=5+Math.floor(Math.random()*3);
+      for(let i=0;i<n;i++){ const t=now+i*(0.05+Math.random()*0.06); const base=1800+Math.random()*1400; coinChing(c,t,base,0.5-i*0.04); } }
+  },
+
+  // ---------- SWOOSH FAMILY ----------
+  {
+    key:"J", name:"Airy swoosh", tag:"swoosh · light",
+    desc:"Light, breathy swipe in the high range — sweeps 1.5k→6k→2k over ~0.4s. Crisp and modern.",
+    oneShot:true,
+    play(){ const c=getCtx(),now=c.currentTime,dur=0.4; const s=c.createBufferSource(); s.buffer=longNoiseBuf();
+      const f=c.createBiquadFilter(); f.type="bandpass"; f.Q.value=0.7;
+      f.frequency.setValueAtTime(1500,now); f.frequency.exponentialRampToValueAtTime(6000,now+dur*0.45); f.frequency.exponentialRampToValueAtTime(2000,now+dur);
+      const g=c.createGain(); g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(0.11*master.gain,now+dur*0.3); g.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start(now); s.stop(now+dur); }
+  },
+  {
+    key:"K", name:"Deep whoosh", tag:"swoosh · cinematic",
+    desc:"Dark, low, cinematic — like a trailer whoosh. Sweeps 200→1.2k→300 over ~0.6s. Weighty.",
+    oneShot:true,
+    play(){ const c=getCtx(),now=c.currentTime,dur=0.6; const s=c.createBufferSource(); s.buffer=longNoiseBuf();
+      const f=c.createBiquadFilter(); f.type="lowpass"; f.Q.value=1.0;
+      f.frequency.setValueAtTime(200,now); f.frequency.exponentialRampToValueAtTime(1200,now+dur*0.5); f.frequency.exponentialRampToValueAtTime(300,now+dur);
+      const g=c.createGain(); g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(0.16*master.gain,now+dur*0.4); g.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start(now); s.stop(now+dur); }
+  },
+  {
+    key:"L", name:"Quick swish", tag:"swoosh · snappy",
+    desc:"Fast and tight — a ~0.18s swipe. Punchy, gets out of the way. Good for rapid cycling.",
+    oneShot:true,
+    play(){ const c=getCtx(),now=c.currentTime,dur=0.18; const s=c.createBufferSource(); s.buffer=longNoiseBuf();
+      const f=c.createBiquadFilter(); f.type="bandpass"; f.Q.value=1.5;
+      f.frequency.setValueAtTime(800,now); f.frequency.exponentialRampToValueAtTime(5000,now+dur);
+      const g=c.createGain(); g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(0.11*master.gain,now+dur*0.25); g.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start(now); s.stop(now+dur); }
+  },
+  {
+    key:"M", name:"Reverse swoosh", tag:"swoosh · suck-in",
+    desc:"Swells in then cuts — a reverse-cymbal 'inhale' that resolves on the new word. ~0.5s.",
+    oneShot:true,
+    play(){ const c=getCtx(),now=c.currentTime,dur=0.5; const s=c.createBufferSource(); s.buffer=longNoiseBuf();
+      const f=c.createBiquadFilter(); f.type="bandpass"; f.Q.value=0.9;
+      f.frequency.setValueAtTime(600,now); f.frequency.exponentialRampToValueAtTime(5000,now+dur);
+      const g=c.createGain(); g.gain.setValueAtTime(0.0001,now); g.gain.exponentialRampToValueAtTime(0.13*master.gain,now+dur*0.85); g.gain.linearRampToValueAtTime(0.0001,now+dur);
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start(now); s.stop(now+dur); }
+  },
+  {
+    key:"N", name:"Swoosh + soft tail", tag:"swoosh · airy tail",
+    desc:"A quick swipe followed by a gentle airy shimmer that fades out. Feels polished, premium.",
+    oneShot:true,
+    play(){ const c=getCtx(),now=c.currentTime;
+      const dur=0.3; const s=c.createBufferSource(); s.buffer=longNoiseBuf();
+      const f=c.createBiquadFilter(); f.type="bandpass"; f.Q.value=1.1; f.frequency.setValueAtTime(900,now); f.frequency.exponentialRampToValueAtTime(5200,now+dur);
+      const g=c.createGain(); g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(0.11*master.gain,now+dur*0.3); g.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start(now); s.stop(now+dur);
+      // airy tail
+      const ts=c.createBufferSource(); ts.buffer=longNoiseBuf(); const tf=c.createBiquadFilter(); tf.type="highpass"; tf.frequency.value=4000;
+      const tg=c.createGain(); tg.gain.setValueAtTime(0.0001,now+0.05); tg.gain.linearRampToValueAtTime(0.05*master.gain,now+0.12); tg.gain.exponentialRampToValueAtTime(0.0001,now+0.6);
+      ts.connect(tf); tf.connect(tg); tg.connect(c.destination); ts.start(now+0.05); ts.stop(now+0.7); }
+  },
+  {
+    key:"O", name:"Sweeping pan swoosh", tag:"swoosh · stereo",
+    desc:"Moves across the stereo field, left→right, as it sweeps. Most dynamic — best with headphones.",
+    oneShot:true,
+    play(){ const c=getCtx(),now=c.currentTime,dur=0.45; const s=c.createBufferSource(); s.buffer=longNoiseBuf();
+      const f=c.createBiquadFilter(); f.type="bandpass"; f.Q.value=1.0; f.frequency.setValueAtTime(700,now); f.frequency.exponentialRampToValueAtTime(5000,now+dur*0.5); f.frequency.exponentialRampToValueAtTime(1000,now+dur);
+      const g=c.createGain(); g.gain.setValueAtTime(0.0001,now); g.gain.linearRampToValueAtTime(0.12*master.gain,now+dur*0.35); g.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+      const p=c.createStereoPanner ? c.createStereoPanner() : null;
+      s.connect(f); f.connect(g);
+      if(p){ p.pan.setValueAtTime(-0.9,now); p.pan.linearRampToValueAtTime(0.9,now+dur); g.connect(p); p.connect(c.destination); }
+      else { g.connect(c.destination); }
+      s.start(now); s.stop(now+dur); }
+  },
+];
+
+// Simulate the real FlapBoard cadence: 8 columns, staggered, several rolls each.
+function playWord(opt){
+  getCtx();
+  if (opt.oneShot){ opt.play(0, 8); return; }   // swoosh / coins: once per change
+  const cols = 8;
+  for (let col=0; col<cols; col++){
+    const rolls = 4 + (col%4) + Math.floor(Math.random()*3);
+    let t = col*45;
+    for (let step=0; step<rolls; step++){
+      t += 52 + step*9;
+      setTimeout(()=>opt.play(col, cols), t);
+    }
+  }
+}
+
+const cards = document.getElementById("cards");
+OPTIONS.forEach(opt => {
+  const el = document.createElement("div");
+  el.className = "card";
+  el.innerHTML = `<h2><span class="tag">${opt.key}</span> ${opt.name} <span style="color:var(--mut);font-size:12px;font-weight:500">· ${opt.tag}</span></h2>
+    <p>${opt.desc}</p>
+    <div class="btns">
+      <button class="play">▶ Play word change</button>
+      <button class="tick">· single tick</button>
+    </div>`;
+  el.querySelector(".play").addEventListener("click", ()=>playWord(opt));
+  el.querySelector(".tick").addEventListener("click", ()=>{ getCtx(); opt.play(0,8); });
+  cards.appendChild(el);
+});
+</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { armFlapSound, playFlapWhoosh } from "../sound.js";
 
 /* SPLIT-FLAP BOARD — ported verbatim from effects.js initFlap().
    Cells are built imperatively inside the host, exactly as before. */
@@ -9,6 +10,7 @@ export default function FlapBoard({ words }) {
     const board = ref.current;
     if (!board) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    armFlapSound();
     function energy() {
       var e = document.body.getAttribute("data-energy");
       return e === "calm" ? 0.55 : e === "hyped" ? 1.8 : 1;
@@ -54,6 +56,7 @@ export default function FlapBoard({ words }) {
 
     function flapToWord(word) {
       clearTimers();
+      if (!reduce) playFlapWhoosh();
       var padded = pad(word);
       for (var i = 0; i < cols; i++) {
         (function (c, finalCh, col) {

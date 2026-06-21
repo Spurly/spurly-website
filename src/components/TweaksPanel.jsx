@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
    "spurly:repaint", and speaks the editor host postMessage protocol. */
 
 const KEY = "spurly_tweaks_v1";
-const DEFAULTS = { palette: "azure", frost: "frosted", energy: "balanced" };
+const DEFAULTS = { palette: "violet", frost: "frosted", energy: "balanced" };
 
 const SWATCHES = {
   azure: "linear-gradient(135deg,#2d6ae0,#38bdf8)",

@@ -628,3 +628,38 @@ body[data-frost="solid"]{
   .flap-cell{width:clamp(26px,8.4vw,40px);height:clamp(38px,12vw,58px)}
   .flap-cell .ch{font-size:clamp(18px,7vw,30px)}
 }
+
+/* ---------- Sound toggle (speaker) ---------- */
+.sound-toggle{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;
+  background:var(--glass);border:1px solid var(--border);color:var(--text-2);position:relative;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  transition:color .2s ease,background .2s ease,border-color .2s ease,transform .15s ease,box-shadow .2s ease}
+.sound-toggle svg{width:18px;height:18px}
+.sound-toggle:hover{color:var(--text-1);transform:translateY(-1px)}
+.sound-toggle.on{color:#fff;background:var(--grad-vivid);border-color:transparent;box-shadow:var(--inner-glow)}
+.sound-toggle.attn{animation:soundAttn 1.05s ease-in-out 3}
+@keyframes soundAttn{0%,100%{box-shadow:0 0 0 0 var(--ring)}50%{box-shadow:0 0 0 9px rgba(124,58,237,0)}}
+.sound-toggle.ripple::after{content:"";position:absolute;inset:-4px;border-radius:50%;
+  border:2px solid var(--accent);animation:soundRipple .65s ease-out;pointer-events:none}
+@keyframes soundRipple{from{transform:scale(.8);opacity:.7}to{transform:scale(1.85);opacity:0}}
+@media (prefers-reduced-motion:reduce){.sound-toggle.attn{animation:none}}
+
+/* ---------- Wobbling CTA icon (Add to Chrome) ---------- */
+.cta-wobble{transform-origin:center;animation:ctaWobble 5s ease-in-out infinite}
+@keyframes ctaWobble{
+  0%{transform:rotate(0)}
+  4%{transform:rotate(-7deg)}
+  9%{transform:rotate(6deg)}
+  14%{transform:rotate(-4deg)}
+  19%{transform:rotate(2deg)}
+  23%{transform:rotate(0)}
+  100%{transform:rotate(0)}
+}
+@media (prefers-reduced-motion:reduce){.cta-wobble{animation:none}}
+
+/* ---------- First-visit onboarding cursor ---------- */
+.intro-cursor{position:fixed;top:0;left:0;z-index:2147483646;pointer-events:none;
+  margin:-3px 0 0 -3px;will-change:transform,opacity;filter:drop-shadow(0 2px 5px rgba(0,0,0,.32))}
+.intro-cursor .ic-in{display:block}
+.intro-cursor.tap .ic-in{animation:introTap .35s ease}
+@keyframes introTap{0%{transform:scale(1)}40%{transform:scale(.7)}100%{transform:scale(1)}}

@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Nav from "./components/Nav.jsx";
 import MobileMenu from "./components/MobileMenu.jsx";
 import Hero from "./components/Hero.jsx";
@@ -11,9 +14,14 @@ import LiveDemo from "./components/LiveDemo.jsx";
 import Pricing from "./components/Pricing.jsx";
 import FinalCTA from "./components/FinalCTA.jsx";
 import Footer from "./components/Footer.jsx";
-import TweaksPanel from "./components/TweaksPanel.jsx";
+import SoundOnboarding from "./components/SoundOnboarding.jsx";
 import useScrollReveal from "./hooks/useScrollReveal.js";
 import useMagnetic from "./hooks/useMagnetic.js";
+
+// Tweaks panel reads localStorage during render, so it must be client-only.
+const TweaksPanel = dynamic(() => import("./components/TweaksPanel.jsx"), {
+  ssr: false,
+});
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -45,6 +53,7 @@ export default function App() {
 
       <Footer />
       <TweaksPanel />
+      <SoundOnboarding />
     </>
   );
 }

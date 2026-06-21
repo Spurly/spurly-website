@@ -11,7 +11,7 @@ export default function FinalCTA() {
           <p className="lead">Add Spurly to Chrome, open LinkedIn, and capture your first Session in under a minute. Free to start — no credit card.</p>
           <div className="hero-actions">
             <ChromeLink variant="primary" size="lg" magnetic>
-              <TargetIcon />
+              <TargetIcon className="cta-wobble" />
               Add to Chrome — Start free
             </ChromeLink>
           </div>
